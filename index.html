@@ -925,6 +925,7 @@
   <a href="https://wa.me/27769581501?text=Hi!+I+found+you+on+your+website+and+want+to+enquire" target="_blank" rel="noopener" class="wa">💬 WhatsApp</a>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
   (function(){
     var body = document.body;
@@ -946,13 +947,12 @@
       if(e.key === 'Escape') closeNav();
     });
 
-    // Form submission — posts to Google Apps Script endpoints wired to the
-    // Client Staffing Enquiries and Candidate Applications Google Sheets.
-    // Fill in these two URLs after deploying the Apps Script (see handoff notes).
-    var SHEETS_ENDPOINTS = {
-      client: '',    // Apps Script Web App URL for the Client Staffing Enquiries sheet
-      candidate: ''  // Apps Script Web App URL for the Candidate Applications sheet
-    };
+    // Form submission — writes straight into Supabase (client_enquiries and
+    // candidate_applications tables). See apps-script/ for the legacy Google
+    // Sheets backend, kept for reference only — Supabase is the live path.
+    var SUPABASE_URL = 'https://kajwnrstdyfcwvyufket.supabase.co';
+    var SUPABASE_ANON_KEY = 'sb_publishable_djBWndOqnzRsVzHtfhqAHQ_giqehaME';
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function val(id){ var el = document.getElementById(id); return el ? el.value : ''; }
     function checkedList(container){
@@ -967,29 +967,29 @@
         e.preventDefault();
         var kind = form.getAttribute('data-demo');
         var box = form.querySelector('.form-status');
-        var payload, endpoint;
+        var table, row;
 
         if (kind === 'client'){
-          endpoint = SHEETS_ENDPOINTS.client;
+          table = 'client_enquiries';
           var daysBox = form.querySelector('.checkgrid');
-          payload = {
+          row = {
             name: val('ce-name'), company: val('ce-company'), email: val('ce-email'),
-            mobile: val('ce-mobile'), altPhone: val('ce-alt'), contactMethod: val('ce-contact-method'),
-            address: val('ce-address'), role: val('ce-role'), employmentType: val('ce-emptype'),
+            mobile: val('ce-mobile'), alt_phone: val('ce-alt'), contact_method: val('ce-contact-method'),
+            address: val('ce-address'), role: val('ce-role'), employment_type: val('ce-emptype'),
             arrangement: val('ce-arrangement'), hours: val('ce-hours'), urgency: val('ce-urgency'),
             salary: val('ce-salary'), driving: val('ce-driving'), languages: val('ce-lang'),
             days: checkedList(daysBox), duties: val('ce-duties'), notes: val('ce-notes'),
             popia: document.getElementById('ce-popia').checked
           };
         } else {
-          endpoint = SHEETS_ENDPOINTS.candidate;
+          table = 'candidate_applications';
           var availBox = form.querySelectorAll('.checkgrid')[0];
           var screenBox = form.querySelectorAll('.checkgrid')[1];
-          payload = {
-            name: val('ca-name'), dob: val('ca-dob'), idNumber: val('ca-id'), nationality: val('ca-nat'),
+          row = {
+            name: val('ca-name'), dob: val('ca-dob'), id_number: val('ca-id'), nationality: val('ca-nat'),
             address: val('ca-address'), province: val('ca-province'), mobile: val('ca-mobile'), email: val('ca-email'),
-            kinName: val('ca-kin-name'), kinNumber: val('ca-kin-number'), role: val('ca-role'),
-            positionType: val('ca-postype'), licence: val('ca-licence'), transport: val('ca-transport'),
+            kin_name: val('ca-kin-name'), kin_number: val('ca-kin-number'), role: val('ca-role'),
+            position_type: val('ca-postype'), licence: val('ca-licence'), transport: val('ca-transport'),
             availability: checkedList(availBox), skills: val('ca-skills'), quals: val('ca-quals'),
             languages: val('ca-langs'), legal: val('ca-legal'), able: val('ca-able'),
             screening: checkedList(screenBox),
@@ -1000,21 +1000,13 @@
 
         var label = kind === 'candidate' ? 'application' : 'enquiry';
 
-        if (!endpoint){
-          box.textContent = 'Thanks — your ' + label + ' has been captured. A consultant will be in touch shortly. (Not yet connected to the live spreadsheet — see handoff notes.)';
-          box.style.display = 'block';
-          box.scrollIntoView({behavior:'smooth', block:'center'});
-          return;
-        }
-
         box.textContent = 'Submitting…';
         box.style.display = 'block';
-        fetch(endpoint, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        }).then(function(){
+        sb.from(table).insert([row]).then(function(res){
+          if (res.error){
+            box.textContent = 'Something went wrong submitting this. Please WhatsApp us directly on +27 76 958 1501.';
+            return;
+          }
           box.textContent = 'Thanks — your ' + label + ' has been submitted. A consultant will be in touch shortly.';
           form.reset();
         }).catch(function(){

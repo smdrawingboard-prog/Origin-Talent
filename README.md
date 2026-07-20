@@ -12,6 +12,11 @@ are inlined, no build step required.
 - `apps-script/client-enquiries.gs` / `apps-script/candidate-applications.gs`
   — legacy Google Apps Script + Sheets backend. Kept for reference/rollback
   only; the live site does **not** call these.
+- `supabase/001_init.sql` — creates the two tables and their original
+  insert-only RLS policies.
+- `supabase/002_tighten_rls.sql` — replaces those policies with ones that
+  enforce required fields, the POPIA/declaration checkboxes, and length
+  caps, instead of a blanket `WITH CHECK (true)`. Run after `001_init.sql`.
 
 ## Form backend: Supabase
 
@@ -24,9 +29,16 @@ write directly to a Supabase project (`kajwnrstdyfcwvyufket`) via
 
 Both tables have row-level security enabled with an **insert-only** policy
 for anonymous visitors — the public key embedded in the page can add rows
-but cannot read, edit or delete existing ones. The table-creation SQL is
-not checked into this repo; it was run once directly in the Supabase SQL
-Editor for that project.
+but cannot read, edit or delete existing ones. The insert policy also
+validates required fields, the POPIA/declaration checkboxes, and length
+caps server-side (see `supabase/002_tighten_rls.sql`) — it doesn't just
+trust the form's client-side JavaScript, since anyone can POST to the
+REST API directly.
+
+The SQL in `supabase/` was run manually in the Supabase SQL Editor for
+that project (`001_init.sql` then `002_tighten_rls.sql`) — it's checked in
+here for version history, but changing these files does **not** apply them;
+re-run the SQL in the Supabase Dashboard to apply schema changes.
 
 The project URL and anon/publishable key are set near the bottom of
 `index.html`, in the final `<script>` block:

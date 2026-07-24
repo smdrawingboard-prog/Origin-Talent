@@ -17,6 +17,11 @@ are inlined, no build step required.
 - `supabase/002_tighten_rls.sql` — replaces those policies with ones that
   enforce required fields, the POPIA/declaration checkboxes, and length
   caps, instead of a blanket `WITH CHECK (true)`. Run after `001_init.sql`.
+- `supabase/003_staff_dashboard.sql` — adds pipeline tracking columns and
+  a `staff` directory/auth layer so staff can read and manage submissions.
+  Run after `002_tighten_rls.sql`.
+- `dashboard.html` — internal staff dashboard for working the enquiry and
+  application pipelines. Not linked from the public site.
 
 ## Form backend: Supabase
 
@@ -60,6 +65,56 @@ two `.gs` files as Web Apps (Extensions > Apps Script > Deploy > New
 deployment > Web app, execute as Me, access Anyone) and swap the form
 submit handler back to `fetch(endpoint, ...)` against those URLs instead of
 `sb.from(table).insert(...)`.
+
+## Staff dashboard
+
+`dashboard.html` is an internal, self-contained page (same no-build-step
+pattern as `index.html`, same brand fonts/colours) for staff to work the
+two form pipelines: Client Enquiries and Candidate Applications. It is
+**not** linked from the public site and has `<meta name="robots" content="noindex, nofollow">`,
+but the file itself is not secret — access to data is enforced server-side
+by Supabase Auth + RLS, not by hiding the URL.
+
+What it does:
+
+- Sign-in (Supabase Auth email/password) gated to rows in the `staff`
+  table — the anon key alone gets you a login form, nothing else.
+- Overview KPIs (new enquiries/applications in the last 7 days, active
+  pipeline counts, placements this month) and a recent-activity feed.
+- Client Enquiries and Candidate Applications tables: search, filter by
+  stage, colour-coded "days in stage" ageing (amber at 10+ days, red at
+  20+), and a detail view per record showing every field submitted on the
+  form.
+- From the detail view: change pipeline stage, assign a staff member, add
+  internal notes (staff-only, separate from the applicant's own notes),
+  and — admins only — permanently delete a record for a POPIA
+  data-erasure request.
+- A Staff panel showing the directory and each person's open workload.
+
+What it deliberately does **not** do: there's no revenue/deal-value
+tracking, currency figures, LinkedIn/HubSpot/Salesforce/Pipedrive/Bullhorn
+integrations, or document upload panel. The website's forms don't capture
+a monetary deal value, and Origin Talent is a single-office domestic
+staffing agency rather than a multi-team sales org, so that machinery
+would be dead weight — this stays scoped to the two pipelines the site
+actually generates.
+
+### Setting up staff access
+
+1. Run `supabase/003_staff_dashboard.sql` in the Supabase SQL Editor
+   (after `001_init.sql` and `002_tighten_rls.sql`).
+2. In the Supabase Dashboard, go to **Authentication → Users → Add user**
+   and create the first staff account (email + password, or send an
+   invite).
+3. Copy that user's UID, then in the SQL Editor:
+   ```sql
+   insert into public.staff (id, full_name, email, role)
+   values ('<uid>', 'Full Name', 'person@origintalent.co.za', 'admin');
+   ```
+   Use `role = 'consultant'` for non-admin staff — admins can additionally
+   delete records (POPIA erasure) and manage the `staff` table.
+4. Repeat steps 2–3 for each additional staff member. There's no
+   self-serve sign-up in `dashboard.html` by design.
 
 ## Quick contact form
 

@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Dashboard | Origin Talent</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#0349A9; --blue-dark:#062F73; --blue-tint:#EFF4FC;
+    --gold:#C9A227; --cream:#FBF8F1; --ink:#1B2233; --ink-soft:#525B72;
+    --line:#E3E8F2; --radius:12px;
+    --amber:#B8862E; --amber-tint:#FBF2E1;
+    --red:#B23A3A; --red-tint:#FBEDED;
+    --green:#2C7A4B; --green-tint:#EAF6EE;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--cream);-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-0.01em;}
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;font-size:0.9rem;}
+
+  /* ---------- Login ---------- */
+  #loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:40px 36px;width:100%;max-width:380px;}
+  .login-card .brand{font-family:'Fraunces',serif;font-weight:600;font-size:1.4rem;color:var(--ink);margin-bottom:4px;}
+  .login-card .brand span{display:block;font-family:'Inter',sans-serif;font-weight:600;font-size:0.68rem;letter-spacing:.28em;color:var(--blue);margin-top:2px;}
+  .login-card p.sub{color:var(--ink-soft);font-size:0.88rem;margin:6px 0 24px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:0.8rem;font-weight:600;margin-bottom:6px;color:var(--ink-soft);}
+  .field input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:#FBFCFE;}
+  .field input:focus{outline:2px solid var(--blue);outline-offset:1px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:9px;border:none;font-weight:600;font-size:0.9rem;}
+  .btn-primary{background:var(--blue);color:#fff;width:100%;}
+  .btn-primary:hover{background:var(--blue-dark);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-small{padding:6px 12px;font-size:0.8rem;border-radius:7px;}
+  .msg{font-size:0.85rem;margin-top:14px;padding:10px 12px;border-radius:8px;display:none;}
+  .msg.err{display:block;background:var(--red-tint);color:var(--red);}
+  .msg.ok{display:block;background:var(--green-tint);color:var(--green);}
+
+  /* ---------- App shell ---------- */
+  #appView{display:none;min-height:100vh;}
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{width:220px;flex:none;background:var(--blue-dark);color:#fff;display:flex;flex-direction:column;padding:22px 0;}
+  .sidebar .brand{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem;padding:0 22px 22px;border-bottom:1px solid rgba(255,255,255,.14);margin-bottom:12px;}
+  .sidebar .brand span{display:block;font-family:'Inter',sans-serif;font-weight:600;font-size:0.62rem;letter-spacing:.28em;color:#9FC0EE;margin-top:3px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:11px 22px;font-size:0.88rem;font-weight:500;color:#D6E2F5;cursor:pointer;border-left:3px solid transparent;}
+  .nav-item:hover{background:rgba(255,255,255,.06);}
+  .nav-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold);}
+  .sidebar-foot{margin-top:auto;padding:14px 22px 0;border-top:1px solid rgba(255,255,255,.14);}
+  .sidebar-foot .who{font-size:0.78rem;color:#B9CCED;margin-bottom:8px;word-break:break-word;}
+
+  .main{flex:1;min-width:0;padding:28px 32px 60px;}
+  .main-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+  .main-head h1{font-size:1.5rem;}
+  .main-head .desc{color:var(--ink-soft);font-size:0.88rem;margin-top:4px;}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:28px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .kpi .num{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:600;color:var(--blue);}
+  .kpi .label{font-size:0.78rem;color:var(--ink-soft);margin-top:2px;}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:24px;}
+  .panel-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .panel-head h2{font-size:1.05rem;}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .toolbar input[type=search], .toolbar select{padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#FBFCFE;font-size:0.85rem;}
+
+  table{width:100%;border-collapse:collapse;font-size:0.86rem;}
+  thead th{text-align:left;font-size:0.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tbody tr:hover{background:var(--blue-tint);}
+  tbody tr:last-child td{border-bottom:none;}
+  .empty-row td{text-align:center;color:var(--ink-soft);padding:28px;}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:0.74rem;font-weight:600;white-space:nowrap;}
+  .badge.stage-open{background:var(--blue-tint);color:var(--blue);}
+  .badge.stage-won{background:var(--green-tint);color:var(--green);}
+  .badge.stage-lost{background:#F1EFEA;color:var(--ink-soft);}
+
+  .days-ok{color:var(--ink-soft);}
+  .days-amber{color:var(--amber);font-weight:600;}
+  .days-red{color:var(--red);font-weight:600;}
+
+  .link-btn{background:none;border:none;color:var(--blue);font-weight:600;font-size:0.85rem;padding:0;}
+  .link-btn:hover{text-decoration:underline;}
+
+  select.stage-select, select.staff-select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:0.82rem;background:#FBFCFE;max-width:160px;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(27,34,51,.5);z-index:50;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff;border-radius:var(--radius);max-width:640px;width:100%;padding:0;}
+  .modal-head{padding:20px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+  .modal-head h3{font-size:1.15rem;}
+  .modal-close{background:none;border:none;font-size:1.3rem;color:var(--ink-soft);line-height:1;}
+  .modal-body{padding:20px 24px;max-height:60vh;overflow-y:auto;}
+  .modal-foot{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:18px;}
+  .detail-grid .full{grid-column:1/-1;}
+  .detail-grid dt{font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:2px;}
+  .detail-grid dd{font-size:0.9rem;word-break:break-word;}
+  .control-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .control-row .field{flex:1;min-width:160px;margin-bottom:0;}
+  .control-row select, .control-row textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#FBFCFE;}
+  textarea{min-height:70px;resize:vertical;}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .staff-table td, .staff-table th{white-space:nowrap;}
+  .note{color:var(--ink-soft);font-size:0.82rem;margin-bottom:16px;}
+
+  @media (max-width: 760px){
+    .shell{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:12px;}
+    .sidebar .brand{display:none;}
+    .sidebar-foot{display:none;}
+    .nav-item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .nav-item.active{border-left-color:transparent;border-bottom-color:var(--gold);}
+    .main{padding:20px 16px 40px;}
+    .detail-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginView">
+  <div class="login-card">
+    <div class="brand">Origin Talent<span>STAFF DASHBOARD</span></div>
+    <p class="sub">Sign in with your staff account to view enquiries and applications.</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Sign in</button>
+    </form>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="appView">
+  <div class="shell">
+    <div class="sidebar">
+      <div class="brand">Origin Talent<span>STAFF DASHBOARD</span></div>
+      <div class="nav-item active" data-view="overview">Overview</div>
+      <div class="nav-item" data-view="enquiries">Client Enquiries</div>
+      <div class="nav-item" data-view="applications">Candidate Applications</div>
+      <div class="nav-item" data-view="staff">Staff</div>
+      <div class="sidebar-foot">
+        <div class="who" id="whoami"></div>
+        <button class="btn btn-ghost btn-small" id="signOutBtn" style="width:100%;">Sign out</button>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <!-- Overview -->
+      <div class="view active" id="view-overview">
+        <div class="main-head">
+          <div>
+            <h1>Overview</h1>
+            <div class="desc">Enquiries and applications coming in from the website.</div>
+          </div>
+          <button class="btn btn-ghost btn-small" id="refreshBtn">Refresh</button>
+        </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="panel">
+          <div class="panel-head"><h2>Recent activity</h2></div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Date</th><th>Type</th><th>Name</th><th>Role</th><th>Stage</th></tr></thead>
+              <tbody id="recentBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Client Enquiries -->
+      <div class="view" id="view-enquiries">
+        <div class="main-head">
+          <div>
+            <h1>Client Enquiries</h1>
+            <div class="desc">Families and clients requesting staff.</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>All enquiries</h2>
+            <div class="toolbar">
+              <input type="search" id="enqSearch" placeholder="Search name, company, role…">
+              <select id="enqStageFilter"><option value="">All stages</option></select>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr>
+                <th>Received</th><th>Name</th><th>Company</th><th>Role needed</th><th>Urgency</th>
+                <th>Stage</th><th>Assigned</th><th>Days in stage</th><th></th>
+              </tr></thead>
+              <tbody id="enqBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidate Applications -->
+      <div class="view" id="view-applications">
+        <div class="main-head">
+          <div>
+            <h1>Candidate Applications</h1>
+            <div class="desc">Candidates who have applied through the site.</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>All applications</h2>
+            <div class="toolbar">
+              <input type="search" id="appSearch" placeholder="Search name, role…">
+              <select id="appStageFilter"><option value="">All stages</option></select>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr>
+                <th>Applied</th><th>Name</th><th>Role applying for</th><th>Position type</th>
+                <th>Stage</th><th>Assigned</th><th>Days in stage</th><th></th>
+              </tr></thead>
+              <tbody id="appBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Staff -->
+      <div class="view" id="view-staff">
+        <div class="main-head">
+          <div>
+            <h1>Staff</h1>
+            <div class="desc">Who has access to this dashboard, and their current workload.</div>
+          </div>
+        </div>
+        <p class="note">Staff accounts are created in the Supabase Dashboard (Authentication → Users), then added here as a row in the <code>staff</code> table. See <code>supabase/003_staff_dashboard.sql</code> for setup steps. Only admins can delete records.</p>
+        <div class="panel">
+          <div class="panel-head"><h2>Directory</h2></div>
+          <div style="overflow-x:auto;">
+            <table class="staff-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Open enquiries</th><th>Open applications</th></tr></thead>
+              <tbody id="staffBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= RECORD MODAL ================= -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Record</h3>
+      <button class="modal-close" id="modalCloseBtn">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-small" id="modalDeleteBtn" style="display:none;">Delete record (POPIA erasure)</button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-ghost btn-small" id="modalCancelBtn">Close</button>
+      <button class="btn btn-primary btn-small" id="modalSaveBtn">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+
+  // Same project as index.html — the anon/publishable key is safe to
+  // expose client-side by design; RLS on the server is what actually
+  // gates read/write access to staff accounts.
+  var SUPABASE_URL = 'https://kajwnrstdyfcwvyufket.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_djBWndOqnzRsVzHtfhqAHQ_giqehaME';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var ENQUIRY_STAGES = ['New Enquiry','Contacted','Needs Confirmed','Candidates Shortlisted','Placed','Lost / No Response'];
+  var CANDIDATE_STAGES = ['New Application','Screening','Interview','Reference Check','Placed','Rejected / Withdrawn'];
+  var WON_STAGES = ['Placed'];
+  var LOST_STAGES = ['Lost / No Response','Rejected / Withdrawn'];
+
+  var ENQUIRY_FIELDS = [
+    ['name','Full name'],['company','Company / household'],['email','Email'],
+    ['mobile','Mobile'],['alt_phone','Alternative phone'],['contact_method','Preferred contact method'],
+    ['address','Address'],['role','Role needed'],['employment_type','Employment type'],
+    ['arrangement','Arrangement'],['hours','Hours'],['urgency','Urgency'],
+    ['salary','Salary offered'],['driving','Driving required'],['languages','Languages required'],
+    ['days','Days required'],['duties','Duties','full'],['notes','Additional notes','full'],
+    ['popia','POPIA consent given']
+  ];
+  var APPLICATION_FIELDS = [
+    ['name','Full name'],['dob','Date of birth'],['id_number','ID number'],['nationality','Nationality'],
+    ['address','Address','full'],['province','Province'],['mobile','Mobile'],['email','Email'],
+    ['kin_name','Next of kin — name'],['kin_number','Next of kin — number'],
+    ['role','Role applying for'],['position_type','Position type'],['licence',"Driver's licence"],
+    ['transport','Own transport'],['availability','Availability','full'],
+    ['skills','Skills','full'],['quals','Qualifications','full'],['languages','Languages'],
+    ['legal','Legal to work in SA'],['able','Able to perform duties','full'],
+    ['screening','Screening consent','full'],['declare','Declaration confirmed'],['popia','POPIA consent given']
+  ];
+
+  var state = {
+    staff: [],
+    me: null,
+    enquiries: [],
+    applications: [],
+    modal: null // { kind: 'enquiry'|'application', row }
+  };
+
+  function el(id){ return document.getElementById(id); }
+  function fmtDate(iso){
+    if(!iso) return '—';
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-ZA', {day:'2-digit',month:'short',year:'numeric'});
+  }
+  function daysSince(iso){
+    if(!iso) return 0;
+    return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+  }
+  function daysClass(n){
+    if(n >= 20) return 'days-red';
+    if(n >= 10) return 'days-amber';
+    return 'days-ok';
+  }
+  function stageBadgeClass(stage){
+    if(WON_STAGES.indexOf(stage) !== -1) return 'stage-won';
+    if(LOST_STAGES.indexOf(stage) !== -1) return 'stage-lost';
+    return 'stage-open';
+  }
+  function esc(s){
+    return String(s === null || s === undefined ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function staffName(id){
+    var s = state.staff.filter(function(x){ return x.id === id; })[0];
+    return s ? s.full_name : '';
+  }
+
+  // ---------------- Auth ----------------
+  el('loginForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var msg = el('loginMsg');
+    msg.className = 'msg';
+    msg.textContent = '';
+    sb.auth.signInWithPassword({
+      email: el('loginEmail').value.trim(),
+      password: el('loginPassword').value
+    }).then(function(res){
+      if (res.error){
+        msg.className = 'msg err';
+        msg.textContent = res.error.message || 'Sign in failed.';
+      }
+    });
+  });
+
+  el('signOutBtn').addEventListener('click', function(){
+    sb.auth.signOut();
+  });
+
+  sb.auth.onAuthStateChange(function(event, session){
+    if (session && session.user){
+      checkStaffAndLoad(session.user);
+    } else {
+      showLogin();
+    }
+  });
+
+  function showLogin(){
+    el('loginView').style.display = 'flex';
+    el('appView').style.display = 'none';
+  }
+
+  function checkStaffAndLoad(user){
+    sb.from('staff').select('*').eq('id', user.id).maybeSingle().then(function(res){
+      if (res.error || !res.data){
+        var msg = el('loginMsg');
+        msg.className = 'msg err';
+        msg.textContent = 'This account is not set up as active staff. Ask an admin to add you in Supabase.';
+        sb.auth.signOut();
+        return;
+      }
+      state.me = res.data;
+      el('whoami').textContent = res.data.full_name + ' (' + res.data.role + ')';
+      el('loginView').style.display = 'none';
+      el('appView').style.display = 'block';
+      loadAll();
+    });
+  }
+
+  // ---------------- Nav ----------------
+  document.querySelectorAll('.nav-item').forEach(function(item){
+    item.addEventListener('click', function(){
+      document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+      document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+      item.classList.add('active');
+      el('view-' + item.getAttribute('data-view')).classList.add('active');
+    });
+  });
+
+  el('refreshBtn').addEventListener('click', loadAll);
+
+  // ---------------- Data loading ----------------
+  function loadAll(){
+    Promise.all([
+      sb.from('staff').select('*').order('full_name', {ascending:true}),
+      sb.from('client_enquiries').select('*').order('created_at', {ascending:false}).limit(1000),
+      sb.from('candidate_applications').select('*').order('created_at', {ascending:false}).limit(1000)
+    ]).then(function(results){
+      state.staff = results[0].data || [];
+      state.enquiries = results[1].data || [];
+      state.applications = results[2].data || [];
+      renderStageFilters();
+      renderOverview();
+      renderEnquiries();
+      renderApplications();
+      renderStaff();
+    });
+  }
+
+  function renderStageFilters(){
+    fillSelect(el('enqStageFilter'), ENQUIRY_STAGES, true);
+    fillSelect(el('appStageFilter'), CANDIDATE_STAGES, true);
+  }
+  function fillSelect(sel, stages, keepFirst){
+    var first = keepFirst ? sel.options[0] : null;
+    sel.innerHTML = '';
+    if (first) sel.appendChild(first);
+    stages.forEach(function(s){
+      var o = document.createElement('option');
+      o.value = s; o.textContent = s;
+      sel.appendChild(o);
+    });
+  }
+
+  function staffSelectOptions(selectedId){
+    var opts = '<option value=""' + (!selectedId ? ' selected' : '') + '>Unassigned</option>';
+    opts += state.staff.map(function(s){
+      return '<option value="' + s.id + '"' + (s.id === selectedId ? ' selected' : '') + '>' + esc(s.full_name) + '</option>';
+    }).join('');
+    return opts;
+  }
+
+  // ---------------- Overview ----------------
+  function renderOverview(){
+    var now = Date.now();
+    var d7 = now - 7*86400000;
+    var monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+
+    var newEnq = state.enquiries.filter(function(r){ return new Date(r.created_at).getTime() >= d7; }).length;
+    var newApp = state.applications.filter(function(r){ return new Date(r.created_at).getTime() >= d7; }).length;
+    var activeEnq = state.enquiries.filter(function(r){ return WON_STAGES.indexOf(r.stage) === -1 && LOST_STAGES.indexOf(r.stage) === -1; }).length;
+    var activeApp = state.applications.filter(function(r){ return WON_STAGES.indexOf(r.stage) === -1 && LOST_STAGES.indexOf(r.stage) === -1; }).length;
+    var placedEnq = state.enquiries.filter(function(r){ return r.stage === 'Placed' && new Date(r.stage_updated_at).getTime() >= monthStart.getTime(); }).length;
+    var placedApp = state.applications.filter(function(r){ return r.stage === 'Placed' && new Date(r.stage_updated_at).getTime() >= monthStart.getTime(); }).length;
+
+    var kpis = [
+      [newEnq, 'New enquiries (7 days)'],
+      [newApp, 'New applications (7 days)'],
+      [activeEnq, 'Enquiries in pipeline'],
+      [activeApp, 'Candidates in pipeline'],
+      [placedEnq, 'Client placements (this month)'],
+      [placedApp, 'Candidates placed (this month)']
+    ];
+    el('kpiGrid').innerHTML = kpis.map(function(k){
+      return '<div class="kpi"><div class="num">' + k[0] + '</div><div class="label">' + k[1] + '</div></div>';
+    }).join('');
+
+    var recent = state.enquiries.map(function(r){ return {type:'Enquiry', row:r}; })
+      .concat(state.applications.map(function(r){ return {type:'Application', row:r}; }))
+      .sort(function(a,b){ return new Date(b.row.created_at) - new Date(a.row.created_at); })
+      .slice(0, 10);
+
+    el('recentBody').innerHTML = recent.length ? recent.map(function(item){
+      var r = item.row;
+      return '<tr><td>' + fmtDate(r.created_at) + '</td><td>' + item.type + '</td><td>' + esc(r.name) + '</td>' +
+        '<td>' + esc(r.role) + '</td><td><span class="badge ' + stageBadgeClass(r.stage) + '">' + esc(r.stage) + '</span></td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="5">No activity yet.</td></tr>';
+  }
+
+  // ---------------- Client Enquiries table ----------------
+  function renderEnquiries(){
+    var q = (el('enqSearch').value || '').toLowerCase();
+    var stageFilter = el('enqStageFilter').value;
+    var rows = state.enquiries.filter(function(r){
+      var matchesQ = !q || [r.name, r.company, r.role].some(function(v){ return (v||'').toLowerCase().indexOf(q) !== -1; });
+      var matchesStage = !stageFilter || r.stage === stageFilter;
+      return matchesQ && matchesStage;
+    });
+    el('enqBody').innerHTML = rows.length ? rows.map(function(r){
+      var days = daysSince(r.stage_updated_at);
+      return '<tr>' +
+        '<td>' + fmtDate(r.created_at) + '</td>' +
+        '<td>' + esc(r.name) + '</td>' +
+        '<td>' + esc(r.company) + '</td>' +
+        '<td>' + esc(r.role) + '</td>' +
+        '<td>' + esc(r.urgency) + '</td>' +
+        '<td><span class="badge ' + stageBadgeClass(r.stage) + '">' + esc(r.stage) + '</span></td>' +
+        '<td>' + esc(staffName(r.assigned_staff_id) || '—') + '</td>' +
+        '<td class="' + daysClass(days) + '">' + days + 'd</td>' +
+        '<td><button class="link-btn" data-open-enq="' + r.id + '">View</button></td>' +
+      '</tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="9">No enquiries match.</td></tr>';
+
+    rows2Handlers('enq');
+  }
+
+  function renderApplications(){
+    var q = (el('appSearch').value || '').toLowerCase();
+    var stageFilter = el('appStageFilter').value;
+    var rows = state.applications.filter(function(r){
+      var matchesQ = !q || [r.name, r.role].some(function(v){ return (v||'').toLowerCase().indexOf(q) !== -1; });
+      var matchesStage = !stageFilter || r.stage === stageFilter;
+      return matchesQ && matchesStage;
+    });
+    el('appBody').innerHTML = rows.length ? rows.map(function(r){
+      var days = daysSince(r.stage_updated_at);
+      return '<tr>' +
+        '<td>' + fmtDate(r.created_at) + '</td>' +
+        '<td>' + esc(r.name) + '</td>' +
+        '<td>' + esc(r.role) + '</td>' +
+        '<td>' + esc(r.position_type) + '</td>' +
+        '<td><span class="badge ' + stageBadgeClass(r.stage) + '">' + esc(r.stage) + '</span></td>' +
+        '<td>' + esc(staffName(r.assigned_staff_id) || '—') + '</td>' +
+        '<td class="' + daysClass(days) + '">' + days + 'd</td>' +
+        '<td><button class="link-btn" data-open-app="' + r.id + '">View</button></td>' +
+      '</tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="8">No applications match.</td></tr>';
+
+    rows2Handlers('app');
+  }
+
+  function rows2Handlers(prefix){
+    document.querySelectorAll('[data-open-' + prefix + ']').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-open-' + prefix);
+        var kind = prefix === 'enq' ? 'enquiry' : 'application';
+        var list = kind === 'enquiry' ? state.enquiries : state.applications;
+        var row = list.filter(function(r){ return r.id === id; })[0];
+        if (row) openModal(kind, row);
+      });
+    });
+  }
+
+  el('enqSearch').addEventListener('input', renderEnquiries);
+  el('enqStageFilter').addEventListener('change', renderEnquiries);
+  el('appSearch').addEventListener('input', renderApplications);
+  el('appStageFilter').addEventListener('change', renderApplications);
+
+  // ---------------- Staff view ----------------
+  function renderStaff(){
+    el('staffBody').innerHTML = state.staff.length ? state.staff.map(function(s){
+      var openEnq = state.enquiries.filter(function(r){ return r.assigned_staff_id === s.id && WON_STAGES.indexOf(r.stage) === -1 && LOST_STAGES.indexOf(r.stage) === -1; }).length;
+      var openApp = state.applications.filter(function(r){ return r.assigned_staff_id === s.id && WON_STAGES.indexOf(r.stage) === -1 && LOST_STAGES.indexOf(r.stage) === -1; }).length;
+      return '<tr><td>' + esc(s.full_name) + '</td><td>' + esc(s.email) + '</td><td>' + esc(s.role) + '</td>' +
+        '<td>' + (s.active ? 'Active' : 'Inactive') + '</td><td>' + openEnq + '</td><td>' + openApp + '</td></tr>';
+    }).join('') : '<tr class="empty-row"><td colspan="6">No staff yet.</td></tr>';
+  }
+
+  // ---------------- Modal ----------------
+  function openModal(kind, row){
+    state.modal = { kind: kind, row: row };
+    var fields = kind === 'enquiry' ? ENQUIRY_FIELDS : APPLICATION_FIELDS;
+    var stages = kind === 'enquiry' ? ENQUIRY_STAGES : CANDIDATE_STAGES;
+
+    el('modalTitle').textContent = row.name || (kind === 'enquiry' ? 'Client enquiry' : 'Candidate application');
+
+    var detailHtml = fields.map(function(f){
+      var key = f[0], label = f[1], full = f[2] === 'full';
+      var v = row[key];
+      if (typeof v === 'boolean') v = v ? 'Yes' : 'No';
+      return '<div class="' + (full ? 'full' : '') + '"><dt>' + esc(label) + '</dt><dd>' + esc(v || '—') + '</dd></div>';
+    }).join('');
+
+    var stageOptions = stages.map(function(s){
+      return '<option value="' + s + '"' + (s === row.stage ? ' selected' : '') + '>' + s + '</option>';
+    }).join('');
+
+    var staffOpts = staffSelectOptions(row.assigned_staff_id);
+
+    el('modalBody').innerHTML =
+      '<dl class="detail-grid">' + detailHtml + '</dl>' +
+      '<div class="control-row">' +
+        '<div class="field"><label>Stage</label><select id="modalStage" class="stage-select" style="width:100%;">' + stageOptions + '</select></div>' +
+        '<div class="field"><label>Assigned to</label><select id="modalAssignee" class="staff-select" style="width:100%;">' + staffOpts + '</select></div>' +
+      '</div>' +
+      '<div class="field"><label>Internal notes (staff only)</label><textarea id="modalNotes">' + esc(row.internal_notes || '') + '</textarea></div>';
+
+    el('modalDeleteBtn').style.display = (state.me && state.me.role === 'admin') ? 'inline-flex' : 'none';
+    el('modalOverlay').classList.add('open');
+  }
+
+  function closeModal(){
+    el('modalOverlay').classList.remove('open');
+    state.modal = null;
+  }
+  el('modalCloseBtn').addEventListener('click', closeModal);
+  el('modalCancelBtn').addEventListener('click', closeModal);
+  el('modalOverlay').addEventListener('click', function(e){
+    if (e.target === el('modalOverlay')) closeModal();
+  });
+
+  el('modalSaveBtn').addEventListener('click', function(){
+    if (!state.modal) return;
+    var table = state.modal.kind === 'enquiry' ? 'client_enquiries' : 'candidate_applications';
+    var id = state.modal.row.id;
+    var assignee = el('modalAssignee').value;
+    var patch = {
+      stage: el('modalStage').value,
+      assigned_staff_id: assignee ? assignee : null,
+      internal_notes: el('modalNotes').value
+    };
+    el('modalSaveBtn').disabled = true;
+    sb.from(table).update(patch).eq('id', id).then(function(res){
+      el('modalSaveBtn').disabled = false;
+      if (res.error){
+        alert('Could not save: ' + res.error.message);
+        return;
+      }
+      closeModal();
+      loadAll();
+    });
+  });
+
+  el('modalDeleteBtn').addEventListener('click', function(){
+    if (!state.modal) return;
+    var ok = confirm('Permanently delete this record? This is intended for POPIA data-erasure requests and cannot be undone.');
+    if (!ok) return;
+    var table = state.modal.kind === 'enquiry' ? 'client_enquiries' : 'candidate_applications';
+    var id = state.modal.row.id;
+    sb.from(table).delete().eq('id', id).then(function(res){
+      if (res.error){
+        alert('Could not delete: ' + res.error.message);
+        return;
+      }
+      closeModal();
+      loadAll();
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

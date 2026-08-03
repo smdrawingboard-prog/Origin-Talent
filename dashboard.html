@@ -587,10 +587,14 @@
 
     el('modalTitle').textContent = row.name || (kind === 'enquiry' ? 'Client enquiry' : 'Candidate application');
 
+    var isAdmin = state.me && state.me.role === 'admin';
     var detailHtml = fields.map(function(f){
       var key = f[0], label = f[1], full = f[2] === 'full';
       var v = row[key];
       if (typeof v === 'boolean') v = v ? 'Yes' : 'No';
+      if (!isAdmin && v && (key === 'id_number' || key === 'dob')) {
+        v = key === 'id_number' ? ('••••••••' + String(v).slice(-4)) : '••••••••';
+      }
       return '<div class="' + (full ? 'full' : '') + '"><dt>' + esc(label) + '</dt><dd>' + esc(v || '—') + '</dd></div>';
     }).join('');
 

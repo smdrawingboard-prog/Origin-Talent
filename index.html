@@ -6,13 +6,13 @@
 <title>Trusted Nannies, House Managers &amp; Domestic Staff in Johannesburg | Origin Talent</title>
 <meta name="description" content="Origin Talent connects Johannesburg families with vetted nannies, tutors, house managers, chefs and drivers. 10,000+ successful placements, 98% client satisfaction. WhatsApp us today.">
 <meta name="keywords" content="nanny agency Johannesburg, domestic staff agency Dainfern, house manager recruitment South Africa, au pair agency Johannesburg, private chef recruitment, driver recruitment agency South Africa">
-<link rel="canonical" href="https://www.origintalent.co.za/recruitment">
+<link rel="canonical" href="https://www.origintalent.co.za/">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Origin Talent | Exceptional People, Trusted in Your Home">
 <meta property="og:description" content="Vetted, screened and reliable household staff for Johannesburg families — nannies, tutors, house managers, chefs, domestic staff and drivers.">
-<meta property="og:url" content="https://www.origintalent.co.za/recruitment">
+<meta property="og:url" content="https://www.origintalent.co.za/">
 <meta property="og:locale" content="en_ZA">
 
 <!-- Schema: LocalBusiness / EmploymentAgency -->
@@ -22,7 +22,7 @@
   "@type": "EmploymentAgency",
   "name": "Origin Talent",
   "description": "Domestic staffing and recruitment agency placing nannies, au pairs, tutors, house managers, private chefs, domestic staff and drivers with families in Johannesburg, South Africa.",
-  "url": "https://www.origintalent.co.za/recruitment",
+  "url": "https://www.origintalent.co.za/",
   "telephone": "+27105020105",
   "email": "roger@origintalent.co.za",
   "address": {
@@ -69,6 +69,11 @@
       "@type": "Question",
       "name": "Which areas of Johannesburg does Origin Talent service?",
       "acceptedAnswer": { "@type": "Answer", "text": "Origin Talent places household staff with families across Johannesburg, including Dainfern, Fourways, Sandton, Bryanston and surrounding areas." }
+    },
+    {
+      "@type": "Question",
+      "name": "What does it cost to hire staff through Origin Talent?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Placement fees depend on the role and seniority required. WhatsApp or call us for a free, no-obligation quote tailored to your household." }
     }
   ]
 }
@@ -931,20 +936,40 @@
     var body = document.body;
     var toggle = document.getElementById('menuToggle');
     var nav = document.getElementById('mobileNav');
+    var navPanel = nav.querySelector('.panel');
+    function focusableInPanel(){
+      return Array.prototype.slice.call(
+        navPanel.querySelectorAll('a[href], button:not([disabled])')
+      );
+    }
     function openNav(){
       body.classList.add('nav-open');
       toggle.setAttribute('aria-expanded','true');
+      var first = focusableInPanel()[0];
+      if(first) first.focus();
     }
     function closeNav(){
       body.classList.remove('nav-open');
       toggle.setAttribute('aria-expanded','false');
+      toggle.focus();
     }
     toggle.addEventListener('click', openNav);
     nav.querySelectorAll('[data-nav-close]').forEach(function(el){
       el.addEventListener('click', closeNav);
     });
     document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape') closeNav();
+      if(!body.classList.contains('nav-open')) return;
+      if(e.key === 'Escape'){ closeNav(); return; }
+      if(e.key === 'Tab'){
+        var items = focusableInPanel();
+        if(!items.length) return;
+        var first = items[0], last = items[items.length - 1];
+        if(e.shiftKey && document.activeElement === first){
+          e.preventDefault(); last.focus();
+        } else if(!e.shiftKey && document.activeElement === last){
+          e.preventDefault(); first.focus();
+        }
+      }
     });
 
     // Form submission — writes straight into Supabase (client_enquiries and

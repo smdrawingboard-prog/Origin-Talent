@@ -1,6 +1,11 @@
 -- Origin Talent — tighten the public INSERT policies flagged by the
 -- Supabase advisor (WITH CHECK (true) effectively bypasses RLS for anon).
 -- Run this in: Supabase Dashboard > SQL Editor > New query
+--
+-- Updated to also require and length-cap dob/id_number/email/address on
+-- candidate_applications, matching the required fields already enforced
+-- client-side in index.html. Re-run this file against the live project —
+-- checking it in does not apply it (see README.md).
 
 drop policy if exists "Public can submit candidate applications" on public.candidate_applications;
 drop policy if exists "Public can submit client enquiries" on public.client_enquiries;
@@ -11,12 +16,18 @@ create policy "Public can submit candidate applications"
   with check (
     coalesce(btrim(name), '') <> ''
     and coalesce(btrim(mobile), '') <> ''
+    and coalesce(btrim(email), '') <> ''
+    and coalesce(btrim(address), '') <> ''
+    and coalesce(btrim(dob), '') <> ''
+    and coalesce(btrim(id_number), '') <> ''
     and declare is true
     and popia is true
     and length(coalesce(name, ''))       <= 200
     and length(coalesce(mobile, ''))     <= 50
     and length(coalesce(email, ''))      <= 200
     and length(coalesce(address, ''))    <= 500
+    and length(coalesce(dob, ''))        <= 20
+    and length(coalesce(id_number, ''))  <= 20
     and length(coalesce(nationality, '')) <= 100
     and length(coalesce(province, ''))   <= 100
     and length(coalesce(kin_name, ''))   <= 200

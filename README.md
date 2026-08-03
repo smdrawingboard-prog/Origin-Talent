@@ -9,6 +9,14 @@ are inlined, no build step required.
 - `index.html` — the site (hero, services, how it works, about, testimonials,
   FAQ, client staffing enquiry form, candidate application form, document
   centre, contact, footer).
+- `brand-assets/origin-talent-logo-full.png` — Roger's official logo
+  reference (navy figure + gold stars, "ORIGIN TALENT" wordmark). The site's
+  header/footer icon is a hand-recoloured, transparent-background crop of
+  the existing vector icon (navy body, gold stars) matching this reference,
+  inlined as base64 in `index.html` rather than loaded from this file —
+  keep this PNG in sync if the logo changes. Brand colours (`--blue`,
+  `--blue-dark`, `--gold` in both `index.html` and `dashboard.html`) are
+  sampled from this reference: navy `#0E3A66` / `#082645`, gold `#C9A257`.
 - `apps-script/client-enquiries.gs` / `apps-script/candidate-applications.gs`
   — legacy Google Apps Script + Sheets backend. Kept for reference/rollback
   only; the live site does **not** call these.

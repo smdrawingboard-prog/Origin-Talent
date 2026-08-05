@@ -5,9 +5,15 @@ Generates the three Document Centre PDFs linked from index.html:
   - Origin-Talent-Candidate-Application-Form.pdf
   - Origin-Talent-Client-Service-Agreement.pdf
 
-Source of truth for field lists/options is the live online forms in
-index.html (search for data-demo="client" / data-demo="candidate"). If
-those forms change, update the FORM data below to match and re-run:
+Source of truth for field lists/options/legal text is Origin Talent's own
+source documents (Client_Staffing_Enquiry_Form__ONLINE_FORM_OT.docx,
+Candidate_Online_Application_Form_OT.docx, CLIENT_SERVICE_AGREEMENT__
+ORIGIN_TALENT.docx), cross-checked against the live online forms in
+index.html (data-demo="client" / data-demo="candidate"). Where the two
+disagree, the .docx wins here, since it's the client's authoritative
+content — see README.md for the known differences from the live site.
+
+If the source content changes, update the data below and re-run:
 
     python3 documents/generate_pdfs.py
 
@@ -21,7 +27,8 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable,
+    KeepTogether, ListFlowable, ListItem
 )
 
 OUT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +46,9 @@ ADDRESS = "First Floor, Dainfern Square, Cnr Winnie Mandela & Broadacres Drive, 
 PHONE = "+27 10 502 0105"
 WHATSAPP = "+27 76 958 1501"
 EMAIL = "roger@origintalent.co.za"
+# The Service Agreement source doc gives a separate admin/accounts address —
+# used only on that document, per the source.
+AGREEMENT_EMAIL = "admin@origintalent.co.za"
 SITE = "www.origintalent.co.za"
 
 styles = getSampleStyleSheet()
@@ -58,13 +68,15 @@ styles.add(ParagraphStyle('SectionHead', parent=styles['Normal'], fontName='Helv
                            fontSize=11.5, textColor=BLUE_DARK, spaceBefore=14, spaceAfter=6))
 styles.add(ParagraphStyle('Body', parent=styles['Normal'], fontName='Helvetica',
                            fontSize=9.4, textColor=INK, leading=13.5, spaceAfter=6))
+styles.add(ParagraphStyle('BulletBody', parent=styles['Normal'], fontName='Helvetica',
+                           fontSize=9.4, textColor=INK, leading=13))
 styles.add(ParagraphStyle('Notice', parent=styles['Normal'], fontName='Helvetica-Oblique',
                            fontSize=8.4, textColor=INK_SOFT, leading=11.5))
 styles.add(ParagraphStyle('Footer', parent=styles['Normal'], fontName='Helvetica',
                            fontSize=7.6, textColor=INK_SOFT, alignment=TA_CENTER))
 
 
-def letterhead(title):
+def letterhead(title, email=EMAIL):
     story = [
         Paragraph("ORIGIN TALENT", styles['Brand']),
         Paragraph("Exceptional People, Trusted in Your Home", styles['Tagline']),
@@ -72,7 +84,7 @@ def letterhead(title):
         Paragraph(title, styles['DocTitle']),
         Spacer(1, 4),
         Paragraph(
-            f"{ADDRESS} &nbsp;|&nbsp; {PHONE} &nbsp;|&nbsp; WhatsApp {WHATSAPP} &nbsp;|&nbsp; {EMAIL}",
+            f"{ADDRESS} &nbsp;|&nbsp; {PHONE} &nbsp;|&nbsp; WhatsApp {WHATSAPP} &nbsp;|&nbsp; {email}",
             styles['ContactLine']
         ),
         Spacer(1, 10),
@@ -161,6 +173,18 @@ def checkbox_grid(options, columns=3, col_width=None):
     return t
 
 
+def checkbox_list(options, col_width=170*mm):
+    """Single-column checkbox list — for options whose labels are too long
+    for a grid (e.g. the document-upload checklist)."""
+    rows = [[checkbox_item(opt, col_width)] for opt in options]
+    t = Table(rows, colWidths=[col_width])
+    t.setStyle(TableStyle([
+        ('TOPPADDING', (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+    return t
+
+
 def ruled_block(n_lines=4):
     rows = [[''] for _ in range(n_lines)]
     t = Table(rows, colWidths=[170*mm], rowHeights=[7*mm]*n_lines)
@@ -181,77 +205,123 @@ def signature_block(party_label="Signature"):
     return t
 
 
+def bullet_list(items):
+    return ListFlowable(
+        [ListItem(Paragraph(item, styles['BulletBody']), spaceAfter=3) for item in items],
+        bulletType='bullet', start='•', leftIndent=14, bulletFontSize=8,
+    )
+
+
 ROLE_OPTIONS = [
     "Au Pair", "Nanny", "Caregiver", "Registered Nurse", "Night Nurse",
     "House Manager", "Cleaner", "Chauffeur", "Babysitter",
-    "Personal Assistant", "Private Chef", "Pet Sitter", "Tutor / Governess",
+    "Personal Assistant (Home & Office)", "Private Chef", "Pet Sitter", "Tutor / Governess",
 ]
+
+EMPLOYMENT_TYPE_OPTIONS = [
+    "Permanent (Full-time)", "Temporary Contract (Fixed term)",
+    "Part-time (Selective days per week or a weekender)",
+]
+ARRANGEMENT_OPTIONS_ENQUIRY = ["Live-in", "Live-out"]
+URGENCY_OPTIONS = ["Immediately (in 2–4 days)", "Within 1 week", "Within 1 month", "Flexible"]
+SALARY_OPTIONS = [
+    "R5 000 – R8 000", "R9 000 – R12 000", "R13 000 – R15 000", "R16 000+", "Open to discussion",
+]
+NATIONALITY_OPTIONS_ENQUIRY = ["South African", "Zimbabwean", "Lesotho", "Other"]
+LANGUAGE_OPTIONS = ["English", "Zulu", "Afrikaans", "Xhosa", "Sotho", "Tswana", "Other"]
+
+AVAILABILITY_OPTIONS = [
+    "Full-time", "Part-time", "Temporary", "Weekend work", "Night shifts", "Emergency placements",
+]
+POSITION_TYPE_OPTIONS = ["Live-in", "Live-out", "Flexible"]
+SCREENING_OPTIONS = [
+    "Criminal background checks", "Identity verification",
+    "Qualification verification", "Reference checks",
+]
+UPLOAD_CHECKLIST = [
+    "Recent photograph (must be professional and look neat)",
+    "Curriculum Vitae (CV)",
+    "Copy of ID or passport, with a valid work permit if applicable",
+    "Contactable reference letter from your previous employer",
+    "Bank statement in your name (serves as proof of residence and bank account confirmation)",
+    "Driver's licence (if applicable)",
+    "Certificates / qualifications (if available)",
+    "Police clearance certificate (if available, must be less than 6 months old)",
+]
+
 
 # ------------------------------------------------------------ document 1 ---
 def build_client_enquiry():
     story = letterhead("Client Staffing Enquiry Form")
     story.append(Paragraph(
-        "Please complete in full and return via WhatsApp, email or in person to your Origin Talent "
-        "consultant. Fields marked * are required. For the fastest response, submit online at "
-        f"{SITE} or WhatsApp {WHATSAPP}.",
+        "Find the Perfect Household Professional — complete the form below and one of our "
+        "recruitment consultants will contact you within 24 hours to discuss your requirements. "
+        f"Fields marked * are required. For the fastest response, submit online at {SITE} or "
+        f"WhatsApp {WHATSAPP}.",
         styles['Instructions']
     ))
 
+    story.append(Paragraph("Contact Information", styles['SectionHead']))
     story.append(field_line("Full name", required=True))
     story.append(field_line("Company name (if applicable)"))
     story.append(two_col_fields([
         ("Email address", True), ("Mobile number", True),
     ]))
     story.append(two_col_fields([
-        ("Alternative contact number", False), ("Home / work address", False),
+        ("Alternative contact number", False), ("Home address", False),
     ]))
 
-    story.append(Paragraph("Preferred contact method", styles['FieldLabel']))
+    story.append(Paragraph("Preferred method of contact", styles['FieldLabel']))
     story.append(checkbox_grid(["Phone", "Email", "WhatsApp"], columns=3))
     story.append(Spacer(1, 6))
 
     story.append(Paragraph("Position required *", styles['FieldLabel']))
     story.append(checkbox_grid(ROLE_OPTIONS, columns=3))
     story.append(field_line("If other, please specify", blank_w=100*mm, label_w=60*mm))
-
-    story.append(two_col_fields([
-        ("Employment type", False), ("Position arrangement", False),
-    ]))
-    story.append(checkbox_grid(["Permanent", "Temporary", "Fixed-term", "Part-time"], columns=4))
-    story.append(Spacer(1, 4))
-    story.append(checkbox_grid(["Live-in", "Live-out", "Flexible"], columns=3))
     story.append(Spacer(1, 6))
 
-    story.append(two_col_fields([
-        ("Working hours", False), ("Driving required", False),
-    ]))
-    story.append(checkbox_grid(["No", "Yes"], columns=2))
+    story.append(Paragraph("Candidate nationality", styles['FieldLabel']))
+    story.append(checkbox_grid(NATIONALITY_OPTIONS_ENQUIRY, columns=4))
+    story.append(field_line("If other, please specify", blank_w=100*mm, label_w=60*mm))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("Placement urgency", styles['FieldLabel']))
-    story.append(checkbox_grid(["Immediate", "Within 1 week", "Within 1 month", "Flexible"], columns=4))
+    story.append(Paragraph("Employment type", styles['FieldLabel']))
+    story.append(checkbox_grid(EMPLOYMENT_TYPE_OPTIONS, columns=1))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("Expected salary range", styles['FieldLabel']))
-    story.append(checkbox_grid(
-        ["R5 000–R8 000", "R9 000–R12 000", "R13 000–R15 000", "R16 000+", "Discuss"],
-        columns=3
-    ))
+    story.append(Paragraph("Type", styles['FieldLabel']))
+    story.append(checkbox_grid(ARRANGEMENT_OPTIONS_ENQUIRY, columns=2))
     story.append(Spacer(1, 6))
-
-    story.append(field_line("Language requirements"))
 
     story.append(Paragraph("Days required", styles['FieldLabel']))
     story.append(checkbox_grid(
         ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], columns=4
     ))
+    story.append(Spacer(1, 6))
+
+    story.append(field_line("Working hours"))
+
+    story.append(Paragraph("How urgently do you require placement?", styles['FieldLabel']))
+    story.append(checkbox_grid(URGENCY_OPTIONS, columns=2))
     story.append(Spacer(1, 8))
 
-    story.append(Paragraph("Duties and responsibilities *", styles['FieldLabel']))
+    story.append(Paragraph("Please describe the duties and responsibilities *", styles['FieldLabel']))
     story.append(ruled_block(4))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("Additional requirements or notes", styles['FieldLabel']))
+    story.append(Paragraph("Expected monthly salary range", styles['FieldLabel']))
+    story.append(checkbox_grid(SALARY_OPTIONS, columns=2))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph("Driving required", styles['FieldLabel']))
+    story.append(checkbox_grid(["Yes", "No"], columns=2))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph("Language requirements", styles['FieldLabel']))
+    story.append(checkbox_grid(LANGUAGE_OPTIONS, columns=4))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph("Additional notes", styles['FieldLabel']))
     story.append(ruled_block(3))
     story.append(Spacer(1, 10))
 
@@ -283,91 +353,105 @@ def build_candidate_application():
         styles['Instructions']
     ))
 
+    story.append(Paragraph("Personal Information", styles['SectionHead']))
     story.append(field_line("Full name", required=True))
     story.append(two_col_fields([
         ("Date of birth", True), ("ID / passport number", True),
     ]))
     story.append(two_col_fields([
-        ("Nationality", False), ("Province", False),
+        ("Gender", False), ("Nationality", False),
     ]))
     story.append(field_line("Residential address", required=True))
     story.append(two_col_fields([
-        ("Mobile number", True), ("Email address", True),
+        ("Province / state", False), ("Mobile number", True),
     ]))
     story.append(two_col_fields([
-        ("Next of kin — name", False), ("Next of kin — number", False),
+        ("Email address", True), ("Next of kin — name", False),
     ]))
+    story.append(field_line("Next of kin — number"))
+
+    story.append(Paragraph("Do you have a valid driver's licence?", styles['FieldLabel']))
+    story.append(checkbox_grid(["Yes", "No"], columns=2))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph("Do you own reliable transportation?", styles['FieldLabel']))
+    story.append(checkbox_grid(["Yes", "No"], columns=2))
+    story.append(Spacer(1, 6))
 
     story.append(Paragraph("Position applying for *", styles['FieldLabel']))
     story.append(checkbox_grid(ROLE_OPTIONS, columns=3))
     story.append(field_line("If other, please specify", blank_w=100*mm, label_w=60*mm))
     story.append(Spacer(1, 6))
 
+    story.append(Paragraph("Are you available for:", styles['FieldLabel']))
+    story.append(checkbox_grid(AVAILABILITY_OPTIONS, columns=3))
+    story.append(Spacer(1, 6))
+
     story.append(Paragraph("Position type", styles['FieldLabel']))
-    story.append(checkbox_grid(["Live-in", "Live-out", "Flexible"], columns=3))
-    story.append(Spacer(1, 6))
-
-    story.append(two_col_fields([
-        ("Valid driver's licence?", False), ("Reliable transport?", False),
-    ]))
-    story.append(checkbox_grid(["No", "Yes"], columns=2))
-    story.append(Spacer(1, 6))
-
-    story.append(Paragraph("Availability", styles['FieldLabel']))
-    story.append(checkbox_grid(
-        ["Full-time", "Part-time", "Temporary", "Weekend", "Night shifts", "Emergency"], columns=3
-    ))
+    story.append(checkbox_grid(POSITION_TYPE_OPTIONS, columns=3))
     story.append(Spacer(1, 8))
 
-    story.append(Paragraph("Skills and experience *", styles['FieldLabel']))
+    story.append(Paragraph("List your skills per your experience *", styles['FieldLabel']))
     story.append(Paragraph(
-        "Childcare, driving, special-needs care, cooking, household administration, pet care, etc.",
+        "e.g. Driving, childcare, special-needs care, professional cooking, household "
+        "administration, pet care, event preparation, report writing, etc.",
         styles['Notice']
     ))
     story.append(ruled_block(4))
     story.append(Spacer(1, 6))
 
-    story.append(Paragraph("Qualifications and training", styles['FieldLabel']))
+    story.append(Paragraph("Qualifications (list any tertiary, certificates or training)", styles['FieldLabel']))
     story.append(ruled_block(3))
     story.append(Spacer(1, 6))
 
-    story.append(field_line("Languages spoken"))
+    story.append(Paragraph("Languages (list all languages that you can speak)", styles['FieldLabel']))
+    story.append(ruled_block(2))
+    story.append(Spacer(1, 6))
 
-    story.append(two_col_fields([
-        ("Legally permitted to work in South Africa? *", False),
-        ("Medically able to perform essential duties?", False),
-    ]))
+    story.append(Paragraph("Have you ever been convicted of a criminal offence?", styles['FieldLabel']))
     story.append(checkbox_grid(["Yes", "No"], columns=2))
-    story.append(Paragraph(
-        "(For medical ability: Yes / No / Reasonable accommodation may be required)",
-        styles['Notice']
-    ))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
 
-    story.append(Paragraph("Screening consent", styles['FieldLabel']))
-    story.append(checkbox_grid([
-        "Identity verification", "Reference checks",
-        "Qualification verification", "Criminal-record check where lawful and relevant",
-    ], columns=2))
+    story.append(Paragraph("Are you willing to undergo:", styles['FieldLabel']))
+    story.append(checkbox_grid(SCREENING_OPTIONS, columns=2))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph("Are you medically fit to perform household duties?", styles['FieldLabel']))
+    story.append(checkbox_grid(["Yes", "No"], columns=2))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph("Are you legally permitted to work in this country?", styles['FieldLabel']))
+    story.append(checkbox_grid(["Yes", "No"], columns=2))
     story.append(Spacer(1, 10))
 
-    story.append(checkbox_item(
-        "I certify that the information supplied is true and complete, and authorise "
-        "Origin Talent to verify information, contact references and conduct lawful background checks. *",
-        170*mm
-    ))
-    story.append(Spacer(1, 3))
-    story.append(checkbox_item(
-        "I consent to the secure processing and storage of my personal information for "
-        "recruitment and placement purposes, in accordance with the privacy notice. *",
-        170*mm
-    ))
+    story.append(Paragraph("Documents to attach", styles['SectionHead']))
     story.append(Paragraph(
-        "Do not email or upload bank statements through an unsecured public channel. Banking "
-        "information will only be requested when necessary, through an approved secure process.",
+        "Please attach copies of the following when submitting this form:",
+        styles['Body']
+    ))
+    story.append(checkbox_list(UPLOAD_CHECKLIST))
+    story.append(Paragraph(
+        "Do not send banking or identity documents through an unsecured public channel — hand "
+        "these to your Origin Talent consultant directly or via an approved secure process.",
         styles['Notice']
     ))
-    story.append(Spacer(1, 14))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("Declaration", styles['SectionHead']))
+    story.append(Paragraph(
+        "By submitting this form, you agree to the below:", styles['Body']
+    ))
+    story.append(bullet_list([
+        "I certify that the information provided in this application is true, complete, and "
+        "accurate to the best of my knowledge.",
+        "I understand that providing false or misleading information may result in the rejection "
+        "of my application or termination of employment if placed.",
+        "I authorise the agency to verify the information provided, contact my references, and "
+        "conduct background and identity checks where applicable.",
+        "I consent to the processing and secure storage of my personal information for "
+        "recruitment and placement purposes in accordance with applicable privacy and data "
+        "protection laws.",
+    ]))
+    story.append(Spacer(1, 10))
     story.append(signature_block("Candidate signature"))
 
     story += footer_note(
@@ -377,143 +461,246 @@ def build_candidate_application():
 
 
 # ------------------------------------------------------------ document 3 ---
-def build_service_agreement():
-    story = letterhead("Client Service Agreement")
-
-    draft_box = Table(
-        [[Paragraph(
-            "WORKING DRAFT — for discussion with your Origin Talent consultant. Final fees, terms "
-            "and legal wording are confirmed with your consultant before signature.",
-            ParagraphStyle('DraftNote', parent=styles['Body'], textColor=BLUE_DARK, fontName='Helvetica-Bold')
-        )]],
-        colWidths=[170*mm]
-    )
-    draft_box.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), TINT),
-        ('BOX', (0, 0), (-1, -1), 0.8, GOLD),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+def party_table(rows):
+    t = Table(rows, colWidths=[38*mm, 132*mm])
+    t.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9.4),
+        ('TEXTCOLOR', (0, 0), (0, -1), INK),
+        ('LINEBELOW', (1, 0), (1, -1), 0.7, LINE),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
     ]))
-    story.append(draft_box)
+    return t
+
+
+def build_service_agreement():
+    story = letterhead("Client Service Agreement", email=AGREEMENT_EMAIL)
+
+    story.append(Paragraph(
+        "This document is a template — complete the details below and review with your "
+        "Origin Talent consultant before signature.",
+        ParagraphStyle('DraftNote', parent=styles['Notice'], textColor=BLUE_DARK)
+    ))
     story.append(Spacer(1, 10))
 
     story.append(Paragraph(
-        "This Service Agreement (“Agreement”) is made between <b>Origin Talent</b> "
-        f"({ADDRESS}) (“Origin Talent”, “we”, “us”) and the client named "
-        "below (“Client”), and sets out the terms on which Origin Talent sources and places "
-        "domestic staff on the Client's behalf.",
+        'This Client Service Agreement ("Agreement") is entered into by:',
         styles['Body']
     ))
-
-    story.append(two_col_fields([("Client name", True), ("Company (if applicable)", False)]))
-    story.append(two_col_fields([("Address", False), ("Contact number", True)]))
-    story.append(field_line("Position(s) being filled", required=True))
-
-    story.append(Paragraph("1. Services Provided", styles['SectionHead']))
-    story.append(Paragraph(
-        "Origin Talent will source, screen and present suitably qualified candidates for the "
-        "position(s) specified above. Screening may include identity verification, reference checks, "
-        "qualification verification, and criminal-record checks where lawful and relevant to the role. "
-        "Screening is conducted on a best-efforts basis using information reasonably available to "
-        "Origin Talent; it does not constitute a guarantee of a candidate's conduct, and the Client "
-        "remains responsible for its own final due diligence before appointment.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("2. Placement Fee", styles['SectionHead']))
-    story.append(field_line("Placement fee", blank_w=100*mm, label_w=45*mm))
-    story.append(field_line("Payment terms", blank_w=100*mm, label_w=45*mm))
-    story.append(Paragraph(
-        "Placement fees depend on the role and seniority required and are confirmed with the Client "
-        "in writing (quotation or invoice) before a placement is confirmed. Fees are payable as set "
-        "out in that written quotation; nothing in this Agreement fixes a fee amount.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("3. Replacement Guarantee", styles['SectionHead']))
-    story.append(Paragraph(
-        "Should a placed candidate leave the role within ", styles['Body']
-    ))
-    story.append(field_line("Guarantee period (days)", blank_w=30*mm, label_w=55*mm))
-    story.append(Paragraph(
-        "of the placement start date, through no fault of the Client, Origin Talent will source a "
-        "suitable replacement candidate at no additional placement fee, subject to the Client having "
-        "met its obligations under this Agreement and the Sectoral Determination referred to below.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("4. Client Obligations", styles['SectionHead']))
-    story.append(Paragraph(
-        "The Client will: (a) provide accurate and complete information about the role and its "
-        "requirements; (b) ensure that any selection criteria are lawful, genuine and non-discriminatory; "
-        "(c) enter into a compliant written contract of employment directly with any candidate appointed, "
-        "in line with the Basic Conditions of Employment Act and Sectoral Determination 7 (Domestic "
-        "Worker Sector); (d) register for and meet UIF and, where applicable, COIDA obligations as the "
-        "candidate's employer; and (e) notify Origin Talent promptly if a placement ends.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("5. Data Protection (POPIA)", styles['SectionHead']))
-    story.append(Paragraph(
-        "Both parties will process personal information shared under this Agreement — including "
-        "candidate and Client contact details — in accordance with the Protection of Personal "
-        "Information Act, 2013, and Origin Talent's privacy notice. Personal information will be used "
-        "only for recruitment, placement and related administration, and retained only as long as "
-        "reasonably necessary for those purposes.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("6. Term and Termination", styles['SectionHead']))
-    story.append(Paragraph(
-        "This Agreement applies to the placement(s) described above and remains in effect until the "
-        "engagement is concluded or either party terminates it in writing. Termination does not affect "
-        "fees already due for placements made before the termination date.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("7. Limitation of Liability", styles['SectionHead']))
-    story.append(Paragraph(
-        "Origin Talent's total liability under this Agreement is limited to the placement fee paid by "
-        "the Client for the relevant placement. Origin Talent is not liable for any indirect or "
-        "consequential loss arising from a placement.",
-        styles['Body']
-    ))
-
-    story.append(Paragraph("8. Governing Law", styles['SectionHead']))
-    story.append(Paragraph(
-        "This Agreement is governed by the laws of the Republic of South Africa.",
-        styles['Body']
-    ))
-
-    story.append(Spacer(1, 14))
-    story.append(Paragraph(
-        "Agreed and accepted by the parties below.", styles['Body']
-    ))
-    story.append(Spacer(1, 6))
-
-    sign_table = Table(
-        [
-            [Paragraph("<b>For the Client</b>", styles['Body']), Paragraph("<b>For Origin Talent</b>", styles['Body'])],
-            [Paragraph("Signature: ____________________________", styles['Body']),
-             Paragraph("Signature: ____________________________", styles['Body'])],
-            [Paragraph("Name: ____________________________", styles['Body']),
-             Paragraph("Name: ____________________________", styles['Body'])],
-            [Paragraph("Date: ____________________________", styles['Body']),
-             Paragraph("Date: ____________________________", styles['Body'])],
-        ],
-        colWidths=[85*mm, 85*mm]
-    )
-    sign_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
+    story.append(party_table([
+        [Paragraph("Business Name:", styles['FieldLabel']), Paragraph("Origin Talent", styles['Body'])],
+        [Paragraph("Registration Number:", styles['FieldLabel']), ''],
+        [Paragraph("Address:", styles['FieldLabel']), Paragraph(ADDRESS, styles['Body'])],
+        [Paragraph("Telephone:", styles['FieldLabel']), Paragraph(PHONE, styles['Body'])],
+        [Paragraph("Email:", styles['FieldLabel']), Paragraph(AGREEMENT_EMAIL, styles['Body'])],
     ]))
-    story.append(KeepTogether(sign_table))
+    story.append(Spacer(1, 6))
+    story.append(Paragraph("AND", ParagraphStyle('And', parent=styles['Body'], alignment=TA_CENTER, fontName='Helvetica-Bold')))
+    story.append(Spacer(1, 6))
+    story.append(party_table([
+        [Paragraph("Full Name:", styles['FieldLabel']), ''],
+        [Paragraph("ID Number:", styles['FieldLabel']), ''],
+        [Paragraph("Address:", styles['FieldLabel']), ''],
+        [Paragraph("Telephone:", styles['FieldLabel']), ''],
+        [Paragraph("Email:", styles['FieldLabel']), ''],
+    ]))
+    story.append(Spacer(1, 4))
+
+    def clause(number, title, body=None, bullets=None):
+        story.append(Paragraph(f"{number}. {title}", styles['SectionHead']))
+        if body:
+            for p in (body if isinstance(body, list) else [body]):
+                story.append(Paragraph(p, styles['Body']))
+        if bullets:
+            story.append(bullet_list(bullets))
+
+    clause(1, "Appointment", [
+        "1.1 The Client appoints the Staffing Agency to recruit, screen, and supply temporary, "
+        "contract, fixed-term, or permanent employees according to the Client's staffing "
+        "requirements.",
+        "1.2 The Staffing Agency accepts the appointment subject to the terms and conditions "
+        "contained in this Agreement.",
+    ])
+
+    clause(2, "Services Provided",
+           "2.1 The Staffing Agency shall provide one or more of the following services:",
+           bullets=[
+               "Recruitment and selection of employees.",
+               "Candidate interviews and screening.",
+               "Qualification verification where applicable.",
+               "Reference checking.",
+               "Criminal and credit checks where legally permissible and authorised.",
+               "Temporary Employment Services (TES).",
+               "Contract staffing.",
+               "Permanent placements.",
+               "Payroll administration (where applicable).",
+               "HR support services.",
+           ])
+
+    clause(3, "Client Responsibilities",
+           "3.1 The Client undertakes to:",
+           bullets=[
+               "Provide accurate job descriptions.",
+               "Inform the Staffing Agency of all required qualifications, skills, experience, "
+               "and medical or legal requirements relevant to the role.",
+               "Maintain a safe workplace in accordance with the Occupational Health and Safety Act.",
+               "Ensure fair treatment of assigned employees.",
+               "Supervise employees during assignments.",
+               "Notify the Staffing Agency immediately of any workplace incidents, misconduct, "
+               "absenteeism, disciplinary issues, or injuries.",
+               "Allow the Staffing Agency reasonable access to employees where necessary.",
+           ])
+
+    clause(4, "Fees and Payment", [
+        "4.1 The Client agrees to pay all invoices issued by the Staffing Agency.",
+        "4.2 Unless otherwise agreed:",
+    ], bullets=[
+        "Payment terms are strictly 30 days from the date of invoice.",
+        "Interest may be charged on overdue accounts at the maximum rate permitted by law.",
+        "Collection costs and legal fees incurred in recovering unpaid accounts shall be for "
+        "the Client's account.",
+    ])
+
+    clause(5, "Temporary Employment Services (TES)",
+           "5.1 Where employees are supplied on a temporary basis:",
+           bullets=[
+               "The Staffing Agency remains the employer for payroll purposes unless otherwise agreed.",
+               "The Client shall supervise the employees during working hours.",
+               "The Client shall comply with all obligations imposed by the Labour Relations Act "
+               "regarding Temporary Employment Services.",
+               "The Client shall not require employees to perform unlawful or unsafe work.",
+           ])
+
+    clause(6, "Permanent Placements", [
+        "6.1 Permanent placement fees become payable immediately once a candidate accepts employment.",
+        "6.2 Should the Client employ a candidate introduced by the Staffing Agency within twelve "
+        "(12) months of introduction, the agreed placement fee shall remain payable.",
+    ])
+
+    clause(7, "Replacement Guarantee",
+           "7.1 Where a permanent employee resigns or is lawfully dismissed for poor performance "
+           "within the first ninety (90) days of employment, the Staffing Agency shall make "
+           "reasonable efforts to provide one replacement candidate at no additional recruitment "
+           "fee, provided:",
+           bullets=[
+               "The original invoice has been paid in full.",
+               "The Client followed a fair probation process.",
+               "The employee was not dismissed due to redundancy or restructuring.",
+           ])
+
+    clause(8, "Confidentiality", [
+        "8.1 Both Parties agree to keep confidential all information relating to:",
+    ], bullets=[
+        "Business operations.", "Clients.", "Candidates.", "Pricing.",
+        "Trade secrets.", "Recruitment processes.",
+    ])
+    story.append(Paragraph(
+        "8.2 Such information shall not be disclosed except where required by law.", styles['Body']
+    ))
+
+    clause(9, "Protection of Personal Information (POPIA)", [
+        "9.1 Both Parties undertake to comply with the Protection of Personal Information Act, 2013.",
+        "9.2 The Client agrees that:",
+    ], bullets=[
+        "Candidate information shall be used solely for recruitment purposes.",
+        "Candidate information shall not be shared with third parties without lawful authority.",
+        "Personal information shall be securely stored.",
+        "Personal information shall be destroyed when no longer required.",
+    ])
+
+    clause(10, "Non-Solicitation",
+           "10.1 The Client agrees not to employ, directly or indirectly, any employee or "
+           "candidate introduced by the Staffing Agency without paying the applicable placement "
+           "fee if such employment occurs within twelve (12) months of the introduction.")
+
+    clause(11, "Liability", [
+        "11.1 The Staffing Agency exercises reasonable care when recruiting employees.",
+        "11.2 However:",
+    ], bullets=[
+        "The final hiring decision rests solely with the Client.",
+        "The Staffing Agency does not guarantee employee performance.",
+        "The Staffing Agency shall not be liable for any indirect or consequential losses "
+        "arising from the actions of supplied employees except where required by law.",
+    ])
+
+    clause(12, "Health and Safety",
+           "12.1 The Client shall:",
+           bullets=[
+               "Provide a safe working environment.",
+               "Conduct workplace induction where required.",
+               "Supply necessary protective clothing and equipment.",
+               "Report workplace injuries immediately.",
+               "Comply with the Occupational Health and Safety Act.",
+           ])
+
+    clause(13, "Dispute Resolution", [
+        "13.1 Any dispute arising from this Agreement shall first be resolved through negotiation.",
+        "13.2 If unresolved within fourteen (14) days, the Parties may refer the dispute to "
+        "mediation or arbitration before approaching a court of competent jurisdiction.",
+    ])
+
+    clause(14, "Termination", [
+        "14.1 Either Party may terminate this Agreement by giving thirty (30) days' written notice.",
+        "14.2 Termination shall not affect:",
+    ], bullets=[
+        "Outstanding payments.", "Confidentiality obligations.", "Any rights accrued before termination.",
+    ])
+
+    clause(15, "Governing Law",
+           "15.1 This Agreement shall be governed by the laws of the Republic of South Africa.")
+
+    clause(16, "Entire Agreement", [
+        "16.1 This document constitutes the entire agreement between the Parties.",
+        "16.2 No amendment shall be valid unless reduced to writing and signed by both Parties.",
+    ])
+
+    story.append(Spacer(1, 12))
+    story.append(field_line("Signed at", blank_w=100*mm, label_w=45*mm))
+    story.append(Spacer(1, 10))
+
+    sign_agency = Table(
+        [
+            [Paragraph("<b>For the Staffing Agency</b>", styles['Body']), ''],
+            [Paragraph("Business Name:", styles['FieldLabel']), Paragraph("Origin Talent", styles['Body'])],
+            [Paragraph("Representative:", styles['FieldLabel']), ''],
+            [Paragraph("Position:", styles['FieldLabel']), ''],
+            [Paragraph("Signature:", styles['FieldLabel']), ''],
+            [Paragraph("Date:", styles['FieldLabel']), ''],
+        ],
+        colWidths=[38*mm, 132*mm]
+    )
+    sign_agency.setStyle(TableStyle([
+        ('LINEBELOW', (1, 1), (1, -1), 0.7, LINE),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('SPAN', (0, 0), (1, 0)),
+    ]))
+    story.append(KeepTogether(sign_agency))
+    story.append(Spacer(1, 10))
+
+    sign_client = Table(
+        [
+            [Paragraph("<b>For the Client</b>", styles['Body']), ''],
+            [Paragraph("Full Name:", styles['FieldLabel']), ''],
+            [Paragraph("Position:", styles['FieldLabel']), ''],
+            [Paragraph("Signature:", styles['FieldLabel']), ''],
+            [Paragraph("Date:", styles['FieldLabel']), ''],
+        ],
+        colWidths=[38*mm, 132*mm]
+    )
+    sign_client.setStyle(TableStyle([
+        ('LINEBELOW', (1, 1), (1, -1), 0.7, LINE),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('SPAN', (0, 0), (1, 0)),
+    ]))
+    story.append(KeepTogether(sign_client))
 
     story += footer_note(
-        "Origin Talent — Client Service Agreement (working draft) · Not valid until confirmed and "
-        "signed with your Origin Talent consultant."
+        "Origin Talent — Client Service Agreement · Template document, not valid until "
+        "completed and signed by both parties."
     )
     return story
 

@@ -5,6 +5,7 @@
   "scripts": {
     "impeccable:install": "npx impeccable install",
     "postinstall": "npx impeccable install",
-    "impeccable:init": "npx impeccable init"
+    "impeccable:init": "npx impeccable init",
+    "impeccable:update": "npx impeccable update"
   }
 }

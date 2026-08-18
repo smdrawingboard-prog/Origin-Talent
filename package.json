@@ -1,0 +1,8 @@
+{
+  "name": "origin-talent",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "impeccable:install": "npx impeccable install"
+  }
+}

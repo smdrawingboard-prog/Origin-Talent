@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "impeccable:install": "npx impeccable install",
-    "postinstall": "npx impeccable install"
+    "postinstall": "npx impeccable install",
+    "impeccable:init": "npx impeccable init"
   }
 }

@@ -1,0 +1,4 @@
+- Source repo is a static single-page site (index.html), not a component library. ds-bundle/ was hand-built: tokens from :root, styles.css = site CSS verbatim, previews are static HTML cards.
+- Fonts load via Google Fonts @import in styles.css (not self-hosted).
+- First sync blocked: DesignSync needs /design-login. No projectId pinned yet - create a fresh project, then record projectId here and in config.json.
+- Upload plan when authorised: writes styles.css, tokens/**, assets/**, _preview/**, README.md. No _ds_bundle.js (no components).

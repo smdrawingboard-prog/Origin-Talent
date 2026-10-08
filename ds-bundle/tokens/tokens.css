@@ -1,0 +1,15 @@
+/* Origin Talent design tokens - extracted from index.html :root */
+:root{
+  --blue:#0349A9;
+  --blue-dark:#062F73;
+  --blue-tint:#EFF4FC;
+  --gold:#C9A227;
+  --cream:#FBF8F1;
+  --ink:#1B2233;
+  --ink-soft:#525B72;
+  --line:#E3E8F2;
+  --radius:14px;
+  --font-display:'Fraunces',serif;
+  --font-body:'Inter',sans-serif;
+  --font-script:'Dancing Script',cursive;
+}
